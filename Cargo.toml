@@ -1,14 +1,14 @@
 [package]
-name = "embedded-driver-template"
-description = "A rust-embedded driver template"
+name = "at24cx"
+description = "A rust-embedded async driver for the Atmel AT24Cx eeprom storage family"
 categories = ["embedded", "hardware-support", "no-std"]
-documentation = "https://docs.rs/embedded-driver-template"
+documentation = "https://docs.rs/at24cx"
 authors = ["Chris Maniewski"]
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/atovproject/embedded-driver-template"
+repository = "https://github.com/atovproject/at24cx"
 
 [dependencies]
 embedded-hal-async = "1.0"

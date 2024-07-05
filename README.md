@@ -1,15 +1,15 @@
-[![crates.io](https://img.shields.io/crates/d/embedded-driver.svg)](https://crates.io/crates/embedded-driver)
-[![crates.io](https://img.shields.io/crates/v/embedded-driver.svg)](https://crates.io/crates/embedded-driver)
-[![Documentation](https://docs.rs/embedded-driver/badge.svg)](https://docs.rs/embedded-driver)
+[![crates.io](https://img.shields.io/crates/d/at24cx.svg)](https://crates.io/crates/at24cx)
+[![crates.io](https://img.shields.io/crates/v/at24cx.svg)](https://crates.io/crates/at24cx)
+[![Documentation](https://docs.rs/at24cx/badge.svg)](https://docs.rs/at24cx)
 ![Minimum Supported Rust Version](https://img.shields.io/badge/rustc-1.63+-blue.svg)
 
-# `embedded-driver-template`
+# `at24cx`
 
->  A rust-embedded driver template to get you started
+>  A rust-embedded async driver for the Atmel AT24Cx eeprom storage family
 
 ## [API reference]
 
-[API reference]: https://docs.rs/embedded-driver
+[API reference]: https://docs.rs/at24cx
 
 ## Minimum Supported Rust Version (MSRV)
 
