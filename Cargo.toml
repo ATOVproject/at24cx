@@ -1,0 +1,20 @@
+[package]
+name = "embedded-driver-template"
+description = "A rust-embedded driver template"
+categories = ["embedded", "hardware-support", "no-std"]
+documentation = "https://docs.rs/embedded-driver-template"
+authors = ["Chris Maniewski"]
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/atovproject/embedded-driver-template"
+
+[dependencies]
+embedded-hal-async = "1.0"
+
+[dev-dependencies]
+embedded-hal-mock = { version="0.11", features = ["eh1", "embedded-hal-async"] }
+tokio = { version = "1.38", features = ["rt", "macros"] }
+critical-section = { version = "1.1", features = ["std"] }
+
