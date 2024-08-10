@@ -14,8 +14,8 @@ use embedded_storage_async::nor_flash::{
 const PAGE_SIZE: usize = 256;
 const ADDRESS_BYTES: usize = 2;
 
-// Adds up to 5ms after which the at24x should definitely be ready
-const POLL_MAX_RETRIES: usize = 50;
+// Adds up to 6ms after which the at24x should definitely be ready
+const POLL_MAX_RETRIES: usize = 60;
 const POLL_DELAY_US: u32 = 100;
 
 /// Custom error type for the various errors that can be thrown by AT24Cx
