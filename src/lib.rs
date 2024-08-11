@@ -170,33 +170,10 @@ where
 {
     const WRITE_SIZE: usize = 1;
 
-    const ERASE_SIZE: usize = 1;
+    const ERASE_SIZE: usize = PAGE_SIZE;
 
-    async fn erase(&mut self, from: u32, to: u32) -> Result<(), Self::Error> {
-        // Check if the erase operation is valid
-        match check_erase(self, from, to) {
-            Err(NorFlashErrorKind::NotAligned) => return Err(Error::NotAligned),
-            Err(_) => return Err(Error::OutOfBounds),
-            Ok(_) => {}
-        }
-
-        let mut current_address = from;
-        while current_address < to {
-            let page_offset = current_address as usize % PAGE_SIZE;
-            let bytes_to_erase = min(PAGE_SIZE - page_offset, (to - current_address) as usize);
-
-            // Create a buffer of 0xFF bytes for erasing
-            let erase_buffer = [0xFF; PAGE_SIZE];
-
-            // Erase (write 0xFF) to the current page
-            self.page_write(current_address, &erase_buffer[..bytes_to_erase])
-                .await?;
-
-            current_address += bytes_to_erase as u32;
-
-            self.poll_ack(current_address).await?;
-        }
-
+    async fn erase(&mut self, _from: u32, _to: u32) -> Result<(), Self::Error> {
+        // No explicit erase needed
         Ok(())
     }
 
@@ -246,20 +223,6 @@ fn check_read<T: ReadNorFlash>(
     length: usize,
 ) -> Result<(), NorFlashErrorKind> {
     check_slice(flash, T::READ_SIZE, offset, length)
-}
-
-// Copied from https://github.com/rust-embedded-community/embedded-storage/blob/master/src/nor_flash.rs
-// TODO: It's not in the async version yet
-/// Return whether an erase operation is aligned and within bounds.
-fn check_erase<T: NorFlash>(flash: &T, from: u32, to: u32) -> Result<(), NorFlashErrorKind> {
-    let (from, to) = (from as usize, to as usize);
-    if from > to || to > flash.capacity() {
-        return Err(NorFlashErrorKind::OutOfBounds);
-    }
-    if from % T::ERASE_SIZE != 0 || to % T::ERASE_SIZE != 0 {
-        return Err(NorFlashErrorKind::NotAligned);
-    }
-    Ok(())
 }
 
 // Copied from https://github.com/rust-embedded-community/embedded-storage/blob/master/src/nor_flash.rs
