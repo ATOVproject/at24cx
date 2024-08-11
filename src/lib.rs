@@ -50,7 +50,7 @@ pub struct Address(pub u8, pub u8);
 
 impl From<Address> for u8 {
     fn from(a: Address) -> Self {
-        0xa0 | (a.1 << 2) | (a.0 << 1)
+        0x50 | (a.1 << 2) | (a.0 << 1)
     }
 }
 
@@ -79,7 +79,7 @@ where
             return Err(Error::OutOfBounds);
         }
         let p0 = if memory_address & 1 << 16 == 0 { 0 } else { 1 };
-        Ok(self.base_address & p0 << 1)
+        Ok(self.base_address | p0)
     }
 
     async fn poll_ack(&mut self, offset: u32) -> Result<(), Error<E>> {
@@ -149,9 +149,7 @@ where
             Ok(_) => {}
         }
         let device_address = self.get_device_address(offset)?;
-        let mut memaddr = [0; 2];
-        memaddr[0] = (offset >> 8) as u8;
-        memaddr[1] = offset as u8;
+        let memaddr = [(offset >> 8) as u8, offset as u8];
         self.i2c
             .write_read(device_address, &memaddr[..2], bytes)
             .await
