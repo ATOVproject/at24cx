@@ -28,6 +28,7 @@ pub enum Error<E: Debug> {
     OutOfBounds,
     WriteEnableFail,
     ReadbackFail,
+    WriteAckTimeout,
 }
 
 impl<E: Debug> NorFlashError for Error<E> {
@@ -84,8 +85,9 @@ where
 
     async fn poll_ack(&mut self, offset: u32) -> Result<(), Error<E>> {
         let device_addr = self.get_device_address(offset)?;
+        let mut empty = [0];
         for _ in 0..POLL_MAX_RETRIES {
-            match self.i2c.write(device_addr, &[]).await {
+            match self.i2c.read(device_addr, &mut empty).await {
                 Ok(_) => return Ok(()), // ACK received, write cycle complete
                 Err(_) => {
                     // NACK received, wait a bit and try again
@@ -93,8 +95,8 @@ where
                 }
             }
         }
-
-        Err(Error::WriteEnableFail) // Timeout waiting for ACK
+        // Timeout waiting for ACK
+        Err(Error::WriteAckTimeout)
     }
 
     async fn page_write(&mut self, address: u32, data: &[u8]) -> Result<(), Error<E>> {
