@@ -4,7 +4,7 @@ use core::cmp::min;
 use core::fmt::Debug;
 use embedded_hal_async::{
     delay::DelayNs,
-    i2c::{ErrorType as I2cErrorType, I2c},
+    i2c::{Error as I2cError, ErrorType as I2cErrorType, I2c},
 };
 use embedded_storage_async::nor_flash::{
     ErrorType as StorageErrorType, NorFlash, NorFlashError, NorFlashErrorKind, ReadNorFlash,
@@ -37,6 +37,12 @@ impl<E: Debug> NorFlashError for Error<E> {
             Error::OutOfBounds => NorFlashErrorKind::OutOfBounds,
             _ => NorFlashErrorKind::Other,
         }
+    }
+}
+
+impl<E: I2cError> From<E> for Error<E> {
+    fn from(error: E) -> Self {
+        Error::I2cError(error)
     }
 }
 
