@@ -11,12 +11,14 @@ use embedded_storage_async::nor_flash::{
 };
 
 // TODO: These are only valid for AT24CM01. Implement the others
-const PAGE_SIZE: usize = 256;
-const ADDRESS_BYTES: usize = 2;
+/// 256 pages for the AT24CM01
+pub const PAGE_SIZE: usize = 256;
+/// 2 address bytes for the AT24CM01
+pub const ADDRESS_BYTES: usize = 2;
 
 // Adds up to 6ms after which the at24x should definitely be ready
 const POLL_MAX_RETRIES: usize = 60;
-const POLL_DELAY_US: u32 = 100;
+const POLL_DELAY_US: u32 = 200;
 
 /// Custom error type for the various errors that can be thrown by AT24Cx
 /// Can be converted into a NorFlashError.
@@ -79,55 +81,38 @@ where
         if memory_address >= (1 << self.address_bits) {
             return Err(Error::OutOfBounds);
         }
-        let p0 = if memory_address & 1 << 16 == 0 { 0 } else { 1 };
+        let p0 = if memory_address & (1 << 16) == 0 {
+            0
+        } else {
+            1
+        };
         Ok(self.base_address | p0)
     }
 
-    async fn poll_ack(&mut self, offset: u32) -> Result<(), Error<E>> {
-        let device_addr = self.get_device_address(offset)?;
-        let mut empty = [0];
-        for _ in 0..POLL_MAX_RETRIES {
-            match self.i2c.read(device_addr, &mut empty).await {
-                Ok(_) => return Ok(()), // ACK received, write cycle complete
-                Err(_) => {
-                    // NACK received, wait a bit and try again
-                    self.delay.delay_us(POLL_DELAY_US).await;
-                }
-            }
-        }
-        // Timeout waiting for ACK
-        Err(Error::WriteAckTimeout)
-    }
-
-    async fn page_write(&mut self, address: u32, data: &[u8]) -> Result<(), Error<E>> {
-        if data.is_empty() {
-            return Ok(());
-        }
-
-        // check this before to ensure that data.len() fits into u32
-        // ($page_size always fits as its maximum value is 256).
+    pub async fn page_write(&mut self, address: u32, data: &[u8]) -> Result<(), Error<E>> {
         if data.len() > PAGE_SIZE {
-            // This would actually be supported by the EEPROM but
-            // the data in the page would be overwritten
             return Err(Error::OutOfBounds);
         }
 
-        let page_boundary = address | (PAGE_SIZE as u32 - 1);
-        if address + data.len() as u32 > page_boundary + 1 {
-            // This would actually be supported by the EEPROM but
-            // the data in the page would be overwritten
-            return Err(Error::OutOfBounds);
-        }
-        //
-        let device_addr = self.get_device_address(address)?;
         let mut payload: [u8; ADDRESS_BYTES + PAGE_SIZE] = [0; ADDRESS_BYTES + PAGE_SIZE];
         payload[0] = (address >> 8) as u8;
         payload[1] = address as u8;
         payload[ADDRESS_BYTES..ADDRESS_BYTES + data.len()].copy_from_slice(data);
+
+        let dev_addr = self.get_device_address(address)?;
         self.i2c
-            .write(device_addr, &payload[..ADDRESS_BYTES + data.len()])
+            .write(dev_addr, &payload[..ADDRESS_BYTES + data.len()])
             .await
-            .map_err(Error::I2cError)
+            .map_err(Error::I2cError)?;
+
+        // ACK polling
+        for _ in 0..POLL_MAX_RETRIES {
+            if self.i2c.write(dev_addr, &[]).await.is_ok() {
+                return Ok(());
+            }
+            self.delay.delay_us(POLL_DELAY_US).await;
+        }
+        Err(Error::WriteAckTimeout)
     }
 }
 
@@ -166,7 +151,6 @@ where
 impl<I2C, E: Debug, D: DelayNs> NorFlash for At24Cx<I2C, D>
 where
     I2C: I2c<Error = E>,
-    E: Into<Error<E>>,
 {
     const WRITE_SIZE: usize = 1;
 
@@ -190,7 +174,6 @@ where
             self.page_write(offset, &bytes[..chunk_size]).await?;
             offset += chunk_size as u32;
             bytes = &bytes[chunk_size..];
-            self.poll_ack(offset).await?;
         }
         Ok(())
     }
