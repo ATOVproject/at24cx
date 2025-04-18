@@ -106,8 +106,9 @@ where
             .map_err(Error::I2cError)?;
 
         // ACK polling
+        const DUMMY: [u8; 1] = [0];
         for _ in 0..POLL_MAX_RETRIES {
-            if self.i2c.write(dev_addr, &[]).await.is_ok() {
+            if self.i2c.write(dev_addr, &DUMMY).await.is_ok() {
                 return Ok(());
             }
             self.delay.delay_us(POLL_DELAY_US).await;
